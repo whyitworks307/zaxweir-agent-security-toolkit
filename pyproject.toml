@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-security-toolkit"
+version = "0.5.0rc8"
+description = "Offline guardrail test harness for AI-agent tool use: deny-by-default policy, human approval tokens, tamper-evident audit, native Windows filesystem adversarial probe."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+license = {file = "LICENSE"}
+# Owner-approved licensing direction; provenance/public-release HOLD in LICENSING_STATUS.md.
+classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Topic :: Security", "License :: OSI Approved :: Apache Software License"]
+
+[project.scripts]
+ast-toolkit = "agent_security_toolkit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

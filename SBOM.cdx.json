@@ -1,0 +1,81 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "name": "agent-security-toolkit",
+      "version": "0.5.0rc8",
+      "properties": [
+        {
+          "name": "release:status",
+          "value": "private-candidate-publication-blocked"
+        },
+        {
+          "name": "license:owner-approval",
+          "value": "Apache-2.0 approved by Christopher Wright on 2026-11-05; inherited provenance pending"
+        },
+        {
+          "name": "provenance:native",
+          "value": "independent verification pending"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "framework",
+      "bom-ref": "runtime:cpython",
+      "name": "CPython standard library",
+      "scope": "required",
+      "properties": [
+        {
+          "name": "declared-version-range",
+          "value": ">=3.11"
+        },
+        {
+          "name": "bundled",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "build:setuptools",
+      "name": "setuptools",
+      "scope": "optional",
+      "properties": [
+        {
+          "name": "declared-version-range",
+          "value": ">=69"
+        },
+        {
+          "name": "bundled",
+          "value": "false"
+        },
+        {
+          "name": "resolved-version",
+          "value": "not resolved; source execution does not require it"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "runtime:cpython",
+      "dependsOn": []
+    },
+    {
+      "ref": "build:setuptools",
+      "dependsOn": []
+    }
+  ]
+}

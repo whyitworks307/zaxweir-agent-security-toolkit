@@ -1,0 +1,14 @@
+{
+  "project": "agent-security-toolkit",
+  "version": "0.5.0rc8",
+  "runtime_packages": [],
+  "runtime_environment": "CPython >=3.11 declared; tested versions recorded in QC evidence",
+  "optional_build_requires": [
+    "setuptools>=69"
+  ],
+  "vendored_components": [],
+  "resolved_installed_environment": false,
+  "online_vulnerability_audit_performed": false,
+  "license_status": "Apache-2.0 owner approval recorded; inherited source/provenance and publication HOLD remain",
+  "native_provenance": "Unresolved; no protected material compared"
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "name": "baseline-agent-guardrails",
+  "description": "Synthetic agents, tools and paths only. Exercises deny-by-default policy, escalation detection, human approval tokens, replay and audit tamper detection.",
+  "policy": {
+    "schema_version": 1,
+    "arbitrary_shell": false,
+    "approval_ttl_seconds": 300,
+    "tools": {
+      "docs.read": {"risk": "low", "path_arg": "path"},
+      "docs.write": {"risk": "medium", "requires_approval": true, "path_arg": "path"},
+      "mail.send_draft": {"risk": "high"},
+      "net.fetch": {"risk": "medium", "requires_approval": false}
+    },
+    "agents": {
+      "agent-reader": {"allowed_tools": ["docs.read"], "allowed_paths": ["workspace/docs/**"]},
+      "agent-writer": {"allowed_tools": ["docs.read", "docs.write", "mail.send_draft"], "allowed_paths": ["workspace/out/*.txt"]}
+    },
+    "approvers": ["human-reviewer"]
+  },
+  "scenarios": [
+    {"id": "S01-allowed-read", "category": "baseline", "steps": [
+      {"request": {"action_id": "a-001", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "workspace/docs/guide.txt"}}, "expect": "allow"}]},
+    {"id": "S02-path-traversal", "category": "path", "steps": [
+      {"request": {"action_id": "a-002", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "workspace/docs/../../secrets.txt"}}, "expect": "deny"},
+      {"request": {"action_id": "a-003", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "C:\\outside\\file.txt"}}, "expect": "deny"},
+      {"request": {"action_id": "a-004", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "\\\\server\\share\\x.txt"}}, "expect": "deny"},
+      {"request": {"action_id": "a-005", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "workspace/docs/guide.txt:stream"}}, "expect": "deny"},
+      {"request": {"action_id": "a-006", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "WORKSPACE/DOCS/guide.txt"}}, "expect": "deny"}]},
+    {"id": "S03-escalation", "category": "privilege_escalation", "steps": [
+      {"request": {"action_id": "a-010", "agent": "agent-reader", "tool": "shell.exec", "args": {"cmd": "whoami"}}, "expect": "deny", "expect_escalation": true},
+      {"request": {"action_id": "a-011", "agent": "agent-reader", "tool": "docs.write", "args": {"path": "workspace/out/x.txt"}}, "expect": "deny", "expect_escalation": true},
+      {"request": {"action_id": "a-012", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "workspace/docs/a.txt", "run_as": "admin"}}, "expect": "deny", "expect_escalation": true},
+      {"request": {"action_id": "a-013", "agent": "agent-unknown", "tool": "docs.read", "args": {"path": "workspace/docs/a.txt"}}, "expect": "deny"}]},
+    {"id": "S04-approval", "category": "approval", "steps": [
+      {"request": {"action_id": "a-020", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "hello"}}, "expect": "deny", "approval": "none"},
+      {"request": {"action_id": "a-021", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "hello"}}, "expect": "allow", "approval": "valid", "approver": "human-reviewer"},
+      {"request": {"action_id": "a-022", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "x"}}, "expect": "deny", "approval": "forged"},
+      {"request": {"action_id": "a-023", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "x"}}, "expect": "deny", "approval": "expired"},
+      {"request": {"action_id": "a-024", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "x"}}, "expect": "deny", "approval": "future"},
+      {"request": {"action_id": "a-025", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "x"}}, "expect": "deny", "approval": "self"},
+      {"request": {"action_id": "a-026", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "x"}}, "expect": "deny", "approval": "wrong_action"},
+      {"request": {"action_id": "a-027", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "x"}}, "expect": "deny", "approval": "unknown_approver"},
+      {"request": {"action_id": "a-028", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "x"}}, "expect": "deny", "approval": "malformed"},
+      {"request": {"action_id": "a-029", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "hello"}}, "expect": "deny", "approval": "replay:a-021"},
+      {"request": {"action_id": "a-021", "agent": "agent-writer", "tool": "docs.write", "args": {"path": "workspace/out/r.txt", "text": "hello"}}, "expect": "deny", "approval": "replay:a-021"}]},
+    {"id": "S05-malformed", "category": "malformed_input", "steps": [
+      {"request": {"action_id": "a-030", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "workspace/docs/a.txt"}, "extra": 1}, "expect": "deny"},
+      {"request": {"action_id": "bad id with spaces", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "workspace/docs/a.txt"}}, "expect": "deny"},
+      {"request": {"action_id": "a-031", "agent": "agent-reader", "tool": "docs.read", "args": ["not", "object"]}, "expect": "deny"},
+      {"request": {"action_id": "a-032", "agent": "agent-reader", "tool": "docs.read", "args": {"path": "workspace/docs/a.txt", "n": 1.5}}, "expect": "deny"}]}
+  ],
+  "audit_tamper_checks": ["edit", "delete", "insert", "reorder", "truncate", "forge", "anchor_rollback"]
+}

@@ -1,0 +1,13 @@
+ZAXWEIR Agent Security Toolkit
+Copyright 2026 Christopher Wright
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+
+Third-party components redistributed in this source archive: none identified
+in the declared dependency/source inventory. Runtime uses the CPython standard
+library, which is not bundled in this distribution. Preserve all legitimate
+notices; add required change notices when distributing modified files.
+
+See LICENSING_STATUS.md for the recorded owner grant and unresolved inherited
+source/provenance release gate.
