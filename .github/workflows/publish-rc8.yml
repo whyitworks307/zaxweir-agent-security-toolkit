@@ -1,0 +1,62 @@
+name: Publish approved v0.5.0rc8 pre-release
+
+# Trigger once when the owner makes this previously private repository public.
+# The manual trigger provides a safe recovery path if the public event fails.
+on:
+  public:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-approved-v0.5.0rc8
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'whyitworks307/zaxweir-agent-security-toolkit' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the published repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify the exact owner-approved archive and sidecar
+        shell: bash
+        run: |
+          set -euo pipefail
+          root='release-assets/v0.5.0rc8'
+          zip="$root/zaxweir-agent-security-toolkit-0.5.0rc8-source.zip"
+          expected='780a789895a33647284443ea0f5aa5fd0b0c8f49e9bdca1ad3877acc59815887'
+          test -f "$zip"
+          test "$(stat -c %s "$zip")" -eq 302461
+          printf '%s  %s\n' "$expected" "$zip" | sha256sum -c -
+          (cd "$root" && sha256sum -c SHA256SUMS.txt)
+          python3 tools/verify_release.py "$zip" --sha256 "$expected"
+          test -f "$root/RELEASE_NOTES.md"
+
+      - name: Publish the exact archive as a GitHub pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='v0.5.0rc8'
+          root='release-assets/v0.5.0rc8'
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo 'The release already exists; not replacing or modifying it.'
+            exit 0
+          fi
+          gh release create "$tag" \
+            "$root/zaxweir-agent-security-toolkit-0.5.0rc8-source.zip" \
+            "$root/SHA256SUMS.txt" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title 'ZAXWEIR Agent Security Toolkit v0.5.0rc8 (pre-release)' \
+            --notes-file "$root/RELEASE_NOTES.md" \
+            --prerelease \
+            --latest=false \
+            --verify-tag
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json url,isPrerelease,assets
